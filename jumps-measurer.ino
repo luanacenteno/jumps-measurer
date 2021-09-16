@@ -2,14 +2,17 @@
 #include <WiFi.h>
 #include <Arduino_JSON.h>
 
-int trigger1 = 25;
-int eco1 = 32;
-int eco2 = 33;
-int eco3 = 34;
-int eco4 = 35;
+int trigger1 = 27;
+int eco1 = 34;
+int eco2 = 32;
+int eco3 = 25;
+int eco4 = 21;
+int eco5 = 19;
+int eco6 = 16;
+int eco7 = 15;
 
-const char* ssid = "AGUARIBAY4";
-const char* password = "33417812";
+const char* ssid = "LUANACENTENO";
+const char* password = "41734656"; 
 
 // Initialize WiFi
 void initWiFi() {
@@ -33,6 +36,9 @@ void setup() {
   pinMode(eco2, INPUT);
   pinMode(eco3, INPUT);
   pinMode(eco4, INPUT);
+  pinMode(eco5, INPUT);
+  pinMode(eco6, INPUT);
+  pinMode(eco7, INPUT);
   pinMode(trigger1, OUTPUT);
   
   digitalWrite(trigger1, LOW); //Primero lo apago para tener el ciclo de una onda limpia
@@ -45,23 +51,22 @@ void loop() {
   //Serial.println("initializing loop...");
 
   if(WiFi.status()== WL_CONNECTED){   //Check WiFi connection status
+    
     HTTPClient http;
     
     http.begin("https://inline-skating-technology.rj.r.appspot.com/api/jumper");  
     http.addHeader("Content-Type", "application/json");
     
-  String measures = "";
-  float minDistance = getMinDistance(true);
-
-  Serial.print("minDistance ");
-  Serial.println(minDistance);
+    float minDistance = getValidDistance();
+    String measures = "";
+    measures += String(minDistance) + ",";
     while(minDistance < 180 && minDistance > 0) {
       minDistance = getMinDistance(true);
-      Serial.print("minDistance ");
+      Serial.print("minDistance2 ");
       Serial.println(minDistance);
       measures += String(minDistance) + ",";
       delay(50);
-    }
+   }
   
   Serial.print("Distancias= ");
   Serial.print(measures);
@@ -81,16 +86,12 @@ void loop() {
 
     if(httpResponseCode>0){
       Serial.println("Código HTTP ► " + String(httpResponseCode));   //Print return code
-
       if(httpResponseCode == 200){
         String cuerpo_respuesta = http.getString();
         Serial.println("El servidor respondió ▼ ");
         Serial.println(cuerpo_respuesta);
-  
       }
-
     }else{
-
      Serial.print("Error enviando POST, código: ");
      Serial.println(httpResponseCode);
 
@@ -98,11 +99,11 @@ void loop() {
 
     http.end();  //libero recursos
     
-  }
-  else{
+  }else{
     
      Serial.println("Error en la conexión WIFI");
   }
+  delay(2000);
 }
 
 int getDistance(int pinEcho){
@@ -119,7 +120,10 @@ float getMinDistance (bool logs){
   long d2;
   long d3;
   long d4;
- 
+  long d5;
+  long d6;
+  long d7;
+  
   d1 = getDistance(eco1);
   delay(50);
   d2 = getDistance(eco2);
@@ -127,11 +131,17 @@ float getMinDistance (bool logs){
   d3 = getDistance(eco3);
   delay(50);
   d4 = getDistance(eco4);
+  delay(50);
+  d5 = getDistance(eco5);
+  delay(50);
+  d6 = getDistance(eco6);
+  delay(50);
+  d7 = getDistance(eco7);
   
   long minDistance = d1;
   
   if (logs) {
-    Serial.print("D1: " + String(d1) + "cm - D2: " + String(d2) + "cm - D3: " + String(d3) + "cm - D4: " + String(d4) + "cm - ");
+    Serial.print("D1: " + String(d1) + "cm - D2: " + String(d2) + "cm - D3: " + String(d3) + "cm - D4: " + String(d4) + "cm - D5: " + String(d5) + "cm - D6: " + String(d6) + "cm - D7: " + String(d7) + "cm - ");
   }
   
   if (d1 <= 0 || (d2 > 0 && d2 < minDistance)) {
@@ -146,9 +156,31 @@ float getMinDistance (bool logs){
   if (minDistance <= 0 || (d4 > 0 && d4 < minDistance)) {
     minDistance = d4;
   }
-  
+  if (minDistance <= 0 || (d5 > 0 && d5 < minDistance)) {
+    minDistance = d5;
+  }
+  if (minDistance <= 0 || (d6 > 0 && d6 < minDistance)) {
+    minDistance = d6;
+  }
+  if (minDistance <= 0 || (d7 > 0 && d7 < minDistance)) {
+    minDistance = d7;
+  }
   return minDistance;
+ 
+}
 
+float getValidDistance() {
+  float minDistance = 0;
+  while(minDistance > 180 || minDistance <= 0) {
+      float minDistance = getMinDistance(false);
+      Serial.print(".");
+      Serial.println(minDistance);
+      if (minDistance < 180 && minDistance > 0) {
+        Serial.println("Distancia válida.");
+        return minDistance;
+      }
+      delay(50);
+   }
 }
 
 String getRequestData(String measures) {
